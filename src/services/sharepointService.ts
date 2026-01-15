@@ -1,4 +1,4 @@
-import { Client } from "@microsoft/microsoft-graph-client";
+import { Client, ResponseType } from "@microsoft/microsoft-graph-client";
 
 /**
  * Interfaccia per i dati del visitatore
@@ -463,7 +463,7 @@ export class SharePointService {
     try {
       const response = await this.graphClient
         .api(`/sites/${this.siteId}/drives/${driveId}/items/${itemId}/content`)
-        .responseType("arraybuffer")
+        .responseType(ResponseType.ARRAYBUFFER)
         .get();
 
       return new Blob([response]);
