@@ -38,10 +38,7 @@ function AppContent() {
   const [, setLoadingSettings] = useState(false);
   
   // Gestione modalità di autenticazione (QR o Email)
-  const [authMode, setAuthMode] = useState<"QR" | "EMAIL">(() => {
-    const saved = localStorage.getItem("kiosk_auth_mode");
-    return (saved === "EMAIL" ? "EMAIL" : "QR");
-  });
+  const [authMode, setAuthMode] = useState<"QR" | "EMAIL">("QR");
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -69,9 +66,18 @@ function AppContent() {
           if (mode === "QR" || mode === "EMAIL") {
             setAuthMode(mode);
             localStorage.setItem("kiosk_auth_mode", mode); // Sync local storage
+          } else {
+            const fallback = localStorage.getItem("kiosk_auth_mode");
+            if (fallback === "QR" || fallback === "EMAIL") {
+              setAuthMode(fallback);
+            }
           }
         } catch (error) {
           console.error("Errore caricamento impostazioni:", error);
+          const fallback = localStorage.getItem("kiosk_auth_mode");
+          if (fallback === "QR" || fallback === "EMAIL") {
+            setAuthMode(fallback);
+          }
         } finally {
           setLoadingSettings(false);
         }
@@ -81,9 +87,9 @@ function AppContent() {
   }, [accounts, instance]);
 
   const handleSetAuthMode = async (mode: "QR" | "EMAIL") => {
+    const previousMode = authMode;
     // Optimistic update
     setAuthMode(mode);
-    localStorage.setItem("kiosk_auth_mode", mode);
 
     if (accounts.length > 0) {
       try {
@@ -100,11 +106,20 @@ function AppContent() {
             settingsListId
           );
           await settingsService.updateSetting("AuthMode", mode);
+          const confirmed = await settingsService.getSetting("AuthMode");
+          if (confirmed === "QR" || confirmed === "EMAIL") {
+            setAuthMode(confirmed);
+            localStorage.setItem("kiosk_auth_mode", confirmed);
+          }
         }
       } catch (error) {
         console.error("Errore salvataggio impostazione AuthMode:", error);
-        // Non facciamo revert per non disturbare l'UX, ma logghiamo l'errore
+        // Revert in caso di errore, per evitare cache locale divergente
+        setAuthMode(previousMode);
+        localStorage.setItem("kiosk_auth_mode", previousMode);
       }
+    } else {
+      localStorage.setItem("kiosk_auth_mode", mode);
     }
   };
 

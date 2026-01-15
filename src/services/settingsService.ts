@@ -11,6 +11,8 @@ export class SettingsService {
   private client: Client;
   private siteId: string;
   private listId: string;
+  private valueFieldName: string | null = null;
+  private valueFieldCandidates: string[];
 
   constructor(accessToken: string, siteId: string, listId: string) {
     this.client = Client.init({
@@ -20,6 +22,15 @@ export class SettingsService {
     });
     this.siteId = siteId;
     this.listId = listId;
+    const envValueField = (import.meta as any)?.env?.VITE_SETTINGS_VALUE_FIELD as string | undefined;
+    this.valueFieldCandidates = [
+      envValueField,
+      "Valore",
+      "field_1",
+      "Field_1",
+      "Value",
+      "value",
+    ].filter(Boolean) as string[];
   }
 
   /**
@@ -29,15 +40,20 @@ export class SettingsService {
     try {
       const response = await this.client
         .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
+        .header("Cache-Control", "no-cache")
+        .header("Pragma", "no-cache")
         .expand("fields")
         .get();
 
-      return response.value.map((item: any) => ({
+      return response.value.map((item: any) => {
+        const valueField = this.pickValueField(item?.fields || {});
+        return {
         id: item.id,
         Title: item.fields.Title,
-        Valore: item.fields.Valore,
+          Valore: valueField ? item.fields[valueField] : item.fields.Valore,
         Descrizione: item.fields.Descrizione,
-      }));
+        };
+      });
     } catch (error) {
       console.error("Errore recupero impostazioni:", error);
       throw error;
@@ -69,6 +85,7 @@ export class SettingsService {
    */
   async updateSetting(key: string, value: string): Promise<void> {
     try {
+      const valueFieldName = await this.resolveValueFieldName();
       const settings = await this.getAllSettings();
       const existing = settings.find(s => s.Title === key);
 
@@ -76,17 +93,21 @@ export class SettingsService {
         // Update
         await this.client
           .api(`/sites/${this.siteId}/lists/${this.listId}/items/${existing.id}/fields`)
+          .header("Cache-Control", "no-cache")
+          .header("Pragma", "no-cache")
           .update({
-            Valore: value
+            [valueFieldName]: value
           });
       } else {
         // Create
         await this.client
           .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
+          .header("Cache-Control", "no-cache")
+          .header("Pragma", "no-cache")
           .post({
             fields: {
               Title: key,
-              Valore: value
+              [valueFieldName]: value
             }
           });
       }
@@ -94,5 +115,46 @@ export class SettingsService {
       console.error(`Errore aggiornamento impostazione ${key}:`, error);
       throw error;
     }
+  }
+
+  private pickValueField(fields: Record<string, any>): string | null {
+    for (const candidate of this.valueFieldCandidates) {
+      if (candidate in fields) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  private async resolveValueFieldName(): Promise<string> {
+    if (this.valueFieldName) {
+      return this.valueFieldName;
+    }
+
+    try {
+      const columns = await this.client
+        .api(`/sites/${this.siteId}/lists/${this.listId}/columns`)
+        .header("Cache-Control", "no-cache")
+        .header("Pragma", "no-cache")
+        .get();
+
+      const normalizedTarget = "valore";
+      const match = (columns?.value || []).find((col: any) => {
+        const display = (col?.displayName || "").toLowerCase();
+        const name = (col?.name || "").toLowerCase();
+        return display === normalizedTarget || name === normalizedTarget;
+      });
+
+      if (match?.name) {
+        this.valueFieldName = match.name;
+        return match.name;
+      }
+    } catch (error) {
+      console.warn("Impossibile risolvere il nome campo 'Valore' via colonne:", error);
+    }
+
+    // Fallback: usa il primo candidato disponibile o Valore
+    this.valueFieldName = this.valueFieldCandidates[0] || "Valore";
+    return this.valueFieldName;
   }
 }
