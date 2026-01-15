@@ -2,7 +2,7 @@ name: Mirror to Personal Repo
 
 on:
   push:
-    branches: [ main ] # <-- ATTENZIONE: Se il tuo branch principale si chiama 'master', scrivi 'master'
+    branches: [ main ]
 
 jobs:
   mirror_to_personal:
@@ -11,14 +11,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Necessario per scaricare tutta la cronologia dei commit
+          fetch-depth: 0
+          # FONDAMENTALE: impedisce al bot di GitHub di sovrascrivere il tuo Token
+          persist-credentials: false 
 
       - name: Push to Personal Mirror
+        env:
+          MY_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          # Configura i tuoi dati personali
           git config --global user.email "rad.nebili@gmail.com"
           git config --global user.name "Wawen22"
           
-          # Esegue il push forzato verso il tuo repository mirror personale
-          # Utilizza il segreto PERSONAL_ACCESS_TOKEN che devi aver salvato nel repo dell'organizzazione
-          git push --force https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/Wawen22/TLCO-PRODUCT-Sistema-Ingressi_MIRROR.git main
+          # Costruiamo l'URL usando il prefisso x-access-token, più affidabile per i PAT
+          # Sostituisci l'URL qui sotto se il nome del repo mirror è diverso
+          git push --force https://x-access-token:${MY_TOKEN}@github.com/Wawen22/TLCO-PRODUCT-Sistema-Ingressi_MIRROR.git main
