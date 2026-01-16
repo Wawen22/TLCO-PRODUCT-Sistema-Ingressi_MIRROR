@@ -1930,7 +1930,7 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
     gap: "0.75rem",
   },
   logoImage: {
-    height: "70px",
+    height: "100px",
     width: "auto",
     objectFit: "contain",
     filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.14))",
