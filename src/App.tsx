@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MsalProvider, AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
-import { msalConfig, loginRequest } from "./config/authConfig";
+import { msalConfig } from "./config/authConfig";
 import { getAccessToken, startProactiveTokenRenewal } from "./services/tokenService";
 import Login from "./components/Login";
 import { KioskMain } from "./components/KioskMain";
