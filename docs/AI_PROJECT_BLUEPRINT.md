@@ -1,5 +1,6 @@
 # 🚀 AI Project Blueprint: Serverless Microsoft 365 SPA
 
+
 **Obiettivo:** Creare una Single Page Application (SPA) moderna, professionale e "Serverless" che utilizzi l'ecosistema Microsoft 365 come backend (Identity, Database, Logic).
 
 ---

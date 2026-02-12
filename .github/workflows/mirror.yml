@@ -25,3 +25,5 @@ jobs:
           # Costruiamo l'URL usando il prefisso x-access-token, più affidabile per i PAT
           # Sostituisci l'URL qui sotto se il nome del repo mirror è diverso
           git push --force https://x-access-token:${MY_TOKEN}@github.com/Wawen22/TLCO-PRODUCT-Sistema-Ingressi_MIRROR.git main
+
+          
