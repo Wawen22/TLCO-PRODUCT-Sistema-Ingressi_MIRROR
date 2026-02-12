@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MsalProvider, AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
 import { msalConfig, loginRequest } from "./config/authConfig";
+import { getAccessToken, startProactiveTokenRenewal } from "./services/tokenService";
 import Login from "./components/Login";
 import { KioskMain } from "./components/KioskMain";
 import { AdminModal } from "./components/AdminModal";
@@ -40,15 +41,20 @@ function AppContent() {
   // Gestione modalità di autenticazione (QR o Email)
   const [authMode, setAuthMode] = useState<"QR" | "EMAIL">("QR");
 
+  // Rinnovo proattivo dei token per prevenire la scadenza del refresh token SPA (24h)
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const stopRenewal = startProactiveTokenRenewal(instance as any);
+      return stopRenewal;
+    }
+  }, [accounts.length, instance]);
+
   useEffect(() => {
     const loadSettings = async () => {
       if (accounts.length > 0) {
         setLoadingSettings(true);
         try {
-          const response = await instance.acquireTokenSilent({
-            ...loginRequest,
-            account: accounts[0],
-          });
+          const accessToken = await getAccessToken(instance, accounts[0]);
           
           const settingsListId = import.meta.env.VITE_SETTINGS_LIST_ID;
           if (!settingsListId) {
@@ -57,7 +63,7 @@ function AppContent() {
           }
 
           const settingsService = new SettingsService(
-            response.accessToken,
+            accessToken,
             import.meta.env.VITE_SHAREPOINT_SITE_ID,
             settingsListId
           );
@@ -93,15 +99,12 @@ function AppContent() {
 
     if (accounts.length > 0) {
       try {
-        const response = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
-        });
+        const accessToken = await getAccessToken(instance, accounts[0]);
         
         const settingsListId = import.meta.env.VITE_SETTINGS_LIST_ID;
         if (settingsListId) {
           const settingsService = new SettingsService(
-            response.accessToken,
+            accessToken,
             import.meta.env.VITE_SHAREPOINT_SITE_ID,
             settingsListId
           );

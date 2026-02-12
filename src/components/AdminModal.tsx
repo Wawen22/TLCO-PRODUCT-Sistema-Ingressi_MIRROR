@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import { AccessiService } from "../services/accessiService";
 import { VisitoriPresenti } from "./VisitoriPresenti";
 import { StoricAccessi } from "./StoricAccessi";
@@ -50,12 +50,9 @@ export const AdminModal = ({ onClose, authMode, setAuthMode }: AdminModalProps) 
         throw new Error("Sessione non disponibile");
       }
 
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account,
-      });
+      const accessToken = await getAccessToken(instance, account);
 
-      const svc = new AccessiService(response.accessToken, siteId, accessiListId, visitatoriListId);
+      const svc = new AccessiService(accessToken, siteId, accessiListId, visitatoriListId);
       const presenti = await svc.getVisitoriPresenti();
       const accessi = await svc.getAllAccessi(500);
 

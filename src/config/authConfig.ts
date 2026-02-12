@@ -11,9 +11,12 @@ export const msalConfig: Configuration = {
   },
   cache: {
     cacheLocation: "localStorage", // persiste tra riavvii del browser
-    storeAuthStateInCookie: false,
+    storeAuthStateInCookie: true, // abilita cookie per supporto iframe SSO cross-browser
   },
   system: {
+    // Rinnova il token 5 minuti prima della scadenza effettiva
+    // per evitare chiamate API con token prossimi alla scadenza
+    tokenRenewalOffsetSeconds: 300,
     loggerOptions: {
       loggerCallback: (level, message, containsPii) => {
         if (containsPii) {

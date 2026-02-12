@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { SharePointService } from "../services/sharepointService";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 
 function SharePointTest({ refreshKey = 0 }: { refreshKey?: number }) {
   const { instance, accounts } = useMsal();
@@ -18,15 +18,12 @@ function SharePointTest({ refreshKey = 0 }: { refreshKey?: number }) {
 
   const getSharePointService = async () => {
     const account = accounts[0];
-    const response = await instance.acquireTokenSilent({
-      ...loginRequest,
-      account,
-    });
+    const accessToken = await getAccessToken(instance, account);
 
     const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
     const listId = import.meta.env.VITE_SHAREPOINT_LIST_ID;
 
-    return new SharePointService(response.accessToken, siteId, listId);
+    return new SharePointService(accessToken, siteId, listId);
   };
 
   const handleGetVisitatori = async () => {

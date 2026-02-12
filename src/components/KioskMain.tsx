@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { InteractionRequiredAuthError } from "@azure/msal-browser";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import { AccessiService } from "../services/accessiService";
 import { SharePointService } from "../services/sharepointService";
 import { useTranslation } from "react-i18next";
@@ -231,12 +230,8 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
     try {
       if (!accounts.length) return;
 
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = response.accessToken;
       const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
       const visitatoriListId = import.meta.env.VITE_SHAREPOINT_LIST_ID;
 
@@ -252,14 +247,6 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
         setVisitatoriAccessDenied(true);
         showStatus("error", t("status.permissionReadVisitors"));
         return;
-      }
-      if (error instanceof InteractionRequiredAuthError) {
-        try {
-          await instance.acquireTokenRedirect(loginRequest);
-          return;
-        } catch (redirectError) {
-          console.error("Errore redirect autenticazione:", redirectError);
-        }
       }
 
       console.error("Errore caricamento visitatori:", error);
@@ -280,11 +267,8 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
 
       setIsPrivacyLoading(true);
       try {
-        const response = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
-        });
-        const svc = new SharePointService(response.accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
+        const accessToken = await getAccessToken(instance, accounts[0]);
+        const svc = new SharePointService(accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
         const blob = await svc.getDocumentContent(doc.driveId, doc.id);
         
         if (active) {
@@ -309,11 +293,8 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
   const loadPrivacyDocs = useCallback(async () => {
     try {
       if (!accounts.length) return;
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
-      const svc = new SharePointService(response.accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
+      const accessToken = await getAccessToken(instance, accounts[0]);
+      const svc = new SharePointService(accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
       const docs = await svc.getPrivacyDocuments();
       
       const mappedDocs = docs.map((d: any) => ({
@@ -429,12 +410,8 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
 
     setTutorialLoading(true);
     try {
-      const tokenResponse = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = tokenResponse.accessToken;
       const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
       const visitatoriListId = import.meta.env.VITE_SHAREPOINT_LIST_ID;
 
@@ -469,13 +446,10 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
 
       setDestinationLoading(true);
       try {
-        const tokenResponse = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
-        });
+        const accessToken = await getAccessToken(instance, accounts[0]);
 
         const accessiService = new AccessiService(
-          tokenResponse.accessToken,
+          accessToken,
           import.meta.env.VITE_SHAREPOINT_SITE_ID,
           import.meta.env.VITE_ACCESSI_LIST_ID,
           import.meta.env.VITE_SHAREPOINT_LIST_ID
@@ -522,12 +496,7 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
           return;
         }
 
-        const tokenResponse = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
-        });
-
-        const accessToken = tokenResponse.accessToken;
+        const accessToken = await getAccessToken(instance, accounts[0]);
         const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
         const accessiListId = import.meta.env.VITE_ACCESSI_LIST_ID;
         const visitatoriListId = import.meta.env.VITE_SHAREPOINT_LIST_ID;
@@ -681,12 +650,9 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
     try {
       if (!accounts.length) throw new Error("Sessione non autenticata");
 
-      const tokenResponse = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const sharepointService = new SharePointService(tokenResponse.accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
+      const sharepointService = new SharePointService(accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
       const freshVisitatori = await sharepointService.getVisitatori();
       const normalizedVisitatori = normalizeVisitatori(freshVisitatori);
       setVisitatori(normalizedVisitatori.filter((v) => v.idVisitatore));
@@ -768,12 +734,9 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
         throw new Error(t("scanner.invalidQr"));
       }
 
-      const tokenResponse = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken2 = await getAccessToken(instance, accounts[0]);
       
-      const accessiService = new AccessiService(tokenResponse.accessToken, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_ACCESSI_LIST_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
+      const accessiService = new AccessiService(accessToken2, import.meta.env.VITE_SHAREPOINT_SITE_ID, import.meta.env.VITE_ACCESSI_LIST_ID, import.meta.env.VITE_SHAREPOINT_LIST_ID);
       let ultimoPercorso = "";
 
       if (emailAuthAction === "uscita") {
@@ -886,12 +849,7 @@ export const KioskMain: React.FC<KioskMainProps> = ({ onAdminAccess, canAccessAd
         return;
       }
 
-      const tokenResponse = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
-
-      const accessToken = tokenResponse.accessToken;
+      const accessToken = await getAccessToken(instance, accounts[0]);
       const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
       const visitatoriListId = import.meta.env.VITE_SHAREPOINT_LIST_ID;
       const sharepointService = new SharePointService(accessToken, siteId, visitatoriListId);

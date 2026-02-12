@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { GraphService } from "../services/graphService";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import "./UserProfile.css";
 
 interface UserData {
@@ -30,12 +30,9 @@ function UserProfile() {
     setError(null);
     try {
       const account = accounts[0];
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: account,
-      });
+      const accessToken = await getAccessToken(instance, account);
 
-      const graphService = new GraphService(response.accessToken);
+      const graphService = new GraphService(accessToken);
       const profile = await graphService.getUserProfile();
       setUserProfile(profile);
       console.log("✅ Profilo utente caricato:", profile);

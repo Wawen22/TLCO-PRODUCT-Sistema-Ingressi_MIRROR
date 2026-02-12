@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import { SharePointService } from "../services/sharepointService";
 
 const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
@@ -27,12 +27,9 @@ export const PrivacyManager: React.FC = () => {
     setError("");
     try {
       if (!accounts[0]) throw new Error("Sessione scaduta");
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
       
-      const svc = new SharePointService(response.accessToken, siteId, visitatoriListId);
+      const svc = new SharePointService(accessToken, siteId, visitatoriListId);
       const data = await svc.getPrivacyDocuments();
       setDocs(data);
     } catch (err: any) {
@@ -51,11 +48,8 @@ export const PrivacyManager: React.FC = () => {
     if (!confirm("Sei sicuro di voler eliminare questo documento?")) return;
     
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
-      const svc = new SharePointService(response.accessToken, siteId, visitatoriListId);
+      const accessToken = await getAccessToken(instance, accounts[0]);
+      const svc = new SharePointService(accessToken, siteId, visitatoriListId);
       await svc.deletePrivacyDocument(id);
       loadDocs();
     } catch (err: any) {
@@ -74,11 +68,8 @@ export const PrivacyManager: React.FC = () => {
 
     setUploading(true);
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
-      const svc = new SharePointService(response.accessToken, siteId, visitatoriListId);
+      const accessToken = await getAccessToken(instance, accounts[0]);
+      const svc = new SharePointService(accessToken, siteId, visitatoriListId);
       await svc.uploadPrivacyDocument(file);
       loadDocs();
     } catch (err: any) {

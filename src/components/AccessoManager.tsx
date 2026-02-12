@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import { AccessiService } from "../services/accessiService";
 import { SharePointService } from "../services/sharepointService";
 
@@ -46,12 +46,8 @@ export const AccessoManager = () => {
   const loadVisitatori = async () => {
     setLoadingVisitatori(true);
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = response.accessToken;
       const sharepointService = new SharePointService(
         accessToken,
         siteId,
@@ -70,12 +66,8 @@ export const AccessoManager = () => {
 
   const checkUltimoAccesso = async (visitatoreId: string) => {
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = response.accessToken;
       const accessiService = new AccessiService(
         accessToken,
         siteId,
@@ -98,12 +90,8 @@ export const AccessoManager = () => {
 
     setLoading(true);
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = response.accessToken;
       const accessiService = new AccessiService(
         accessToken,
         siteId,
@@ -152,12 +140,8 @@ export const AccessoManager = () => {
 
     setLoading(true);
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = response.accessToken;
       const accessiService = new AccessiService(
         accessToken,
         siteId,

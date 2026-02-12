@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from "react";
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import { AccessiService } from "../services/accessiService";
 import * as XLSX from "xlsx";
 import type React from "react";
@@ -69,12 +69,7 @@ export const StoricAccessi = ({ refreshKey = 0 }: { refreshKey?: number }) => {
   const loadAccessi = async () => {
     setLoading(true);
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
-
-      const accessToken = response.accessToken;
+      const accessToken = await getAccessToken(instance, accounts[0]);
       const accessiService = new AccessiService(
         accessToken,
         siteId,

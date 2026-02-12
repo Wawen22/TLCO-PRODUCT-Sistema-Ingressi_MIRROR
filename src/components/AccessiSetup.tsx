@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "../config/authConfig";
+import { getAccessToken } from "../services/tokenService";
 import { AccessiService } from "../services/accessiService";
 
 const siteId = import.meta.env.VITE_SHAREPOINT_SITE_ID;
@@ -30,12 +30,8 @@ export const AccessiSetup = () => {
     setError("");
 
     try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
+      const accessToken = await getAccessToken(instance, accounts[0]);
 
-      const accessToken = response.accessToken;
       const name = target === "accessi" ? "Accessi" : "Visitatori";
       const id = await AccessiService.getListIdByName(accessToken, siteId, name);
 
